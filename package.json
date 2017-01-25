@@ -1,0 +1,42 @@
+{
+  "name": "datlas",
+  "version": "0.0.1",
+  "description": "Interactive map construction",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/david4096/datlas.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/david4096/datlas/issues"
+  },
+  "homepage": "https://github.com/david4096/datlas#readme",
+  "dependencies": {
+    "d3": "^4.4.4",
+    "jquery": "^3.1.1",
+    "js-sha256": "^0.4.0",
+    "leaflet": "^1.0.3",
+    "leaflet-draw": "^0.4.9",
+    "leaflet-graphicscale": "0.0.2",
+    "leaflet-modal": "^0.1.3",
+    "leaflet-toolbar": "^0.1.2",
+    "leaflet.deflate": "^1.0.0",
+    "leaflet.markercluster": "^1.0.1",
+    "sidebar-v2": "^0.3.1"
+  },
+  "devDependencies": {
+    "babel-core": "^6.22.1",
+    "babel-loader": "^6.2.10",
+    "babel-preset-env": "^1.1.8",
+    "babel-preset-es2015": "^6.22.0",
+    "jsx-loader": "^0.13.2",
+    "react": "^15.4.2",
+    "webpack": "^1.14.0",
+    "webpack-dev-server": "^1.16.2"
+  }
+}
