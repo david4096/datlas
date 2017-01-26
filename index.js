@@ -301,6 +301,47 @@ function updateLayers() {
 	updateLayer(previewLayer);
 }
 
+function cacheget(url, callback, options) {
+	var getdoc = {
+		url: url
+	};
+	var key = sha256(JSON.stringify(getdoc));
+	if (key in localStorage) {
+		callback(JSON.parse(localStorage.getItem(key)));
+	} else {
+		$.ajax(url, {
+			data : JSON.stringify(data),
+			contentType : 'application/json',
+			type : 'POST',
+			success: function(res) {
+				localStorage.setItem(key, JSON.stringify(res));
+				callback(res);
+			}
+		});
+	}
+}
+
+function cachepost(url, data, callback) {
+	var postdoc = {
+		url: url,
+		data: data
+	};
+	var key = sha256(JSON.stringify(postdoc));
+	if (sha256(JSON.stringify(postdoc)) in localStorage) {
+		localStorage.setItem(key, JSON.stringify(res));
+	} else {
+		$.ajax(url, {
+			data : JSON.stringify(data),
+			contentType : 'application/json',
+			type : 'POST',
+			success: function(res) {
+				localStorage.setItem(key, JSON.stringify(res));
+				callback(res);
+			}
+		});
+	}
+}
+
 /*
 for codeLayerScript in codeLayers {
 	var codeLayer = L.Layer();
