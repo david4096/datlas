@@ -10,7 +10,7 @@ var sha256 = require('js-sha256').sha256;
 // Let's set up a function that will let us start dealing with state using
 // the URL hash
 var mapdoc; // hopefully this is the only variable we manage
-
+var layers = {};
 initBasedOnURL();
 // We can start by initializing the map it won't look like much until the
 // plugins have loaded.
@@ -25,12 +25,16 @@ var map = L.map('map', {
 
 
 $("#map").height(window.innerHeight - $("#map").offset().top);
-map.setView(mapdoc.view);
+updateMap();
+Object.keys(layers).forEach(function(key) {
+	layers[key].layer.addTo(map);
+});
 
 function updateMap() {
 	// We shouldn't have to do this unless it's used in place of init i think
 	map.setView(mapdoc.view);
 	// Same?
+	console.log(mapdoc.options.zoom);
 	map.setZoom(mapdoc.options.zoom);
 	// Layer deserialization
 	//mapdoc.layers.forEach(function(layer){
@@ -38,6 +42,16 @@ function updateMap() {
 	//}
 }
 
+
+// every run of preview reloads everything in the layer
+var previewLayer = {
+	layer: L.layerGroup(),
+	shapes: [],
+	fn: function() {},
+	offset: {x: 0, y: 0}
+}
+
+updateLayers();
 
 // Initialization, URL and storage
 
@@ -74,6 +88,17 @@ function initBasedOnURL() {
 		console.log(testdoc);
 		if (testdoc && testdoc.created) {
 			mapdoc = testdoc;
+			layers = {}
+			Object.keys(mapdoc.layers).forEach(function(key) {
+				var layer = mapdoc.layers[key];
+				console.log(layer);
+				layers[key] = {
+					fn: eval("(" + layer.fn + ")"),
+					offset: layer.offset,
+					shapes: layer.shapes,
+					layer: L.layerGroup()
+				}
+			});
 		} else {
 			initUrl(fragment);
 		}
@@ -83,12 +108,27 @@ function initBasedOnURL() {
 	}
 }
 
+function serializeLayers() {
+	var slayers = {};
+	Object.keys(layers).forEach(function(key) {
+		var layer = layers[key];
+		slayers[key] = {
+			fn: layer.fn.toString(),
+			offset: layer.offset,
+			shapes: []
+		}
+	});
+	return slayers;
+}
+
 function updateStorage() {
 	var h = sha256(JSON.stringify(mapdoc));
 	console.log(h);
 	mapdoc.options.crs = L.CRS.Simple;
 	mapdoc.lastHash = h;
 	mapdoc.view = map.getCenter();
+	mapdoc.layers = serializeLayers();
+	mapdoc.options.zoom = map.getZoom();
 	localStorage.setItem(h, JSON.stringify(mapdoc));
 	location.href = "#" + h;
 }
@@ -137,13 +177,19 @@ $(document).ready(function(){
 
 	$("#addLayer").click(function(evt) {
 		var layerString = {
-			fn: previewLayer.fn,
+			fn: previewLayer.fn.toString(),
 			offset: previewLayer.offset,
 			shapes: []
 		};
-		var newLayer = layerString;
-		newLayer.layer = L.layerGroup();
-		layers[sha256(JSON.stringify(layerString))] = previewLayer;
+		console.log(layerString);
+		var newLayer = {
+			fn: previewLayer.fn,
+			offset: layerString.offset,
+			shapes: [],
+			layer: previewLayer.layer
+		};
+		layers[sha256(JSON.stringify(layerString))] = newLayer;
+		updateStorage();
 		previewLayer = {
 			layer: L.layerGroup(),
 			shapes: [],
@@ -151,8 +197,33 @@ $(document).ready(function(){
 			offset: {x: 0, y: 0}
 		}
 		updateLayers();
+		updatePreviousLayers();
 	});
 });
+
+function copyCode(key) {
+	var code = layers[key].fn.toString();
+	// 24 long (function(window, add) {
+	code = code.slice(24, code.lastIndexOf('})'));
+	console.log(code);
+	$("#code").focus();
+	$("#code").val(code);
+	//$("#code").val(code);
+}
+
+function updatePreviousLayers() {
+	console.log('layers');
+	Object.keys(layers).forEach(function(key) {
+		var n = $("#previousLayers")
+			.prepend("<p id='" + key + "'><a href='#'>" + key.slice(0, 8) + "</a></p>")
+
+		$("#" + key).click(function() {
+				console.log('copying code')
+				console.log(key);
+				copyCode(key);
+			});
+	});
+}
 
 // Plugins
 
@@ -168,13 +239,6 @@ var sidebar = L.control.sidebar('sidebar', {position: "right"}).addTo(map);
 // None of the sidebar events are handled at this level... but we'll add them
 // here for now. It's not layout-aware and will obscure underlayers.
 
-// every run of preview reloads everything in the layer
-var previewLayer = {
-	layer: L.layerGroup(),
-	shapes: [],
-	fn: function() {},
-	offset: {x: 0, y: 0}
-}
 
 function bounds() {
 	var b = map.getBounds();
@@ -212,7 +276,6 @@ function updateLayer(layer) {
 		});
 }
 
-var layers = {};
 function previewCodeLayer(codeLayer) {
 	previewLayer.layer.clearLayers();
 	previewLayer.layer = L.layerGroup();
@@ -228,10 +291,13 @@ function previewCodeLayer(codeLayer) {
 }
 
 function updateLayers() {
+	console.log(layers);
 	Object.keys(layers).forEach(function(key) {
-		console.log('here')
+		console.log('updating');
+		console.log(key);
 		updateLayer(layers[key]);
 	})
+	console.log('updating preview')
 	updateLayer(previewLayer);
 }
 
