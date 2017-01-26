@@ -132,8 +132,26 @@ $(document).ready(function(){
 
 	$("#clearPreview").click(function(evt) {
 		console.log('clear');
-		previewLayer.clearLayers();
-	})
+		previewLayer.layer.clearLayers();
+	});
+
+	$("#addLayer").click(function(evt) {
+		var layerString = {
+			fn: previewLayer.fn,
+			offset: previewLayer.offset,
+			shapes: []
+		};
+		var newLayer = layerString;
+		newLayer.layer = L.layerGroup();
+		layers[sha256(JSON.stringify(layerString))] = previewLayer;
+		previewLayer = {
+			layer: L.layerGroup(),
+			shapes: [],
+			fn: function() {},
+			offset: {x: 0, y: 0}
+		}
+		updateLayers();
+	});
 });
 
 // Plugins
@@ -157,7 +175,6 @@ var previewLayer = {
 	fn: function() {},
 	offset: {x: 0, y: 0}
 }
-var previewCode;
 
 function bounds() {
 	var b = map.getBounds();
@@ -195,12 +212,15 @@ function updateLayer(layer) {
 		});
 }
 
-var layers = [];
+var layers = {};
 function previewCodeLayer(codeLayer) {
 	previewLayer.layer.clearLayers();
 	previewLayer.layer = L.layerGroup();
-	previewCode = codeLayer.code
-	var shapesPromise = eval(codeLayer.code); // :)
+	var previewCode = "(function(window, add) {"
+	previewCode += codeLayer.code
+	previewCode += "})"
+	console.log(previewCode);
+	var shapesPromise = eval(previewCode); // :)
 	previewLayer.layer.addTo(map);
 	previewLayer = {fn: shapesPromise, layer: previewLayer.layer, shapes: [], offset: {x: codeLayer.offsetx, y: codeLayer.offsety}};
 	// layers.push(layer);
@@ -208,8 +228,9 @@ function previewCodeLayer(codeLayer) {
 }
 
 function updateLayers() {
-	layers.forEach(function(layer) {
-		updateLayer(layer, bounds);
+	Object.keys(layers).forEach(function(key) {
+		console.log('here')
+		updateLayer(layers[key]);
 	})
 	updateLayer(previewLayer);
 }

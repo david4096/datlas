@@ -76,28 +76,25 @@
               </h1>
               <p>Add a Layer Using JavaScript</p>
               <textarea id="code" style="width: 100%" rows="30" wrap="soft">
-(function(window, add) {
-	// Window is an object that let's you get the coordinates and zoom
-	// level of the current view. Use it to control which objects to
-	// return from your function.
-  var from = Math.floor(window.left);
-  var to = Math.floor(window.right);
-  var layer = L.layerGroup();
-  for (var k = from; k < to; k++) {
-    // The add function is a callback that you call on each shape
-    // you want to add to the map.
 
-		add(L.marker([0, k]));
-    // Or you can batch operations together.
-	}
-})</textarea>
+// Window is an object that let's you get the coordinates and zoom
+// level of the current view. Use it to control which objects to
+// return from your function.
+var from = Math.floor(window.left);
+var to = Math.floor(window.right);
+var layer = L.layerGroup();
+for (var k = from; k < to; k++) {
+  // The add function is a callback that you call on each shape
+  // you want to add to the map.
+  add(L.marker([0, k]));
+}</textarea>
               <p>
                 <input type="text" id="offsetx" placeholder="x offset"/>
                 <input type="text" id="offsety" placeholder="y offset"/>
               </p>
               <p>
                 <button id="preview">Preview Layer</button><button id="clearPreview">clear</button>
-                <button>Add Layer</button>
+                <button id="addLayer">Add Layer</button>
               </p>
           </div>
           <div class="sidebar-pane" id="open">
