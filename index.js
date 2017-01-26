@@ -161,12 +161,13 @@ function loadCodeLayer() {
 	var codeLayer = {
 		offsetx: parseInt($("#offsetx").val()) || 0,
 		offsety: parseInt($("#offsety").val()) || 0,
-		code: $('#code').val()
+		code: myCodeMirror.getValue()
 	}
 	previewCodeLayer(codeLayer);
 }
 
 $(document).ready(function(){
+
 	$("#preview").click(function(evt) {
 		loadCodeLayer();
 	});
@@ -237,20 +238,26 @@ $(document).ready(function(){
 		dlAnchorElem.setAttribute("download", "datlas.json");
 		//dlAnchorElem.click();
 	});
+
+	// Instantiate editor
+	$("#code").focus();
 });
 
 function copyCode(key) {
 	var code = layers[key].fn.toString();
+	// This nasty bit makes sure the client doesn't have to look
+	// at boilerplate.
 	// 24 long (function(window, add) {
 	code = code.slice(24, code.lastIndexOf('})'));
 	console.log(code);
 	$("#code").focus();
-	$("#code").val(code);
+	myCodeMirror.setValue(code);
 	//$("#code").val(code);
 }
 
 function updatePreviousLayers() {
 	console.log('layers');
+	// TODO better, it doesn't manage state and can't tell what was
 	Object.keys(layers).forEach(function(key) {
 		var n = $("#previousLayers")
 			.prepend("<p id='" + key + "'><a href='#'>" + key.slice(0, 8) + "</a></p>")
@@ -274,6 +281,34 @@ function updatePreviousLayers() {
 var sidebarplugin = require('./node_modules/sidebar-v2/js/leaflet-sidebar.js');
 var sidebar = L.control.sidebar('sidebar', {position: "right"}).addTo(map);
 
+
+var CodeMirror = require('codemirror');
+
+var boilerplate = "// Window is an object that let's you get the coordinates and zoom\n"
+boilerplate += "// level of the current view. Use it to control which objects to\n"
+boilerplate += "// return from your function.\n"
+boilerplate += "var from = Math.floor(window.left);\n"
+boilerplate += "var to = Math.floor(window.right);\n"
+boilerplate += "var layer = L.layerGroup();\n"
+boilerplate += "for (var k = from; k < to; k++) {\n"
+boilerplate += "  // The add function is a callback that you call on each \n"
+boilerplate += "  // you want to add to the map.\n"
+boilerplate += "  add(L.circle([0, k], 0.8));\n"
+boilerplate += "}\n"
+
+document.getElementById('code').innerHTML = boilerplate;
+
+var myCodeMirror = CodeMirror.fromTextArea(document.getElementById('code'), {
+			mode: "javascript",
+			lineNumbers: true,
+    	styleActiveLine: true,
+    	matchBrackets: true,
+		});
+myCodeMirror.setOption("theme", "eclipse");
+
+myCodeMirror.on("changes", function(evt) {
+	loadCodeLayer();
+})
 // None of the sidebar events are handled at this level... but we'll add them
 // here for now. It's not layout-aware and will obscure underlayers.
 

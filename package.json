@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/david4096/datlas#readme",
   "dependencies": {
+    "codemirror": "^5.23.0",
     "d3": "^4.4.4",
     "jquery": "^3.1.1",
     "js-sha256": "^0.4.0",
@@ -26,7 +27,7 @@
     "leaflet-modal": "^0.1.3",
     "leaflet-toolbar": "^0.1.2",
     "leaflet.deflate": "^1.0.0",
-    "leaflet.markercluster": "^1.0.1",
+    "leaflet.markercluster": "git+https://github.com/Leaflet/Leaflet.markercluster.git",
     "sidebar-v2": "^0.3.1"
   },
   "devDependencies": {
