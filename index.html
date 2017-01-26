@@ -57,7 +57,7 @@
               <li><a href="#addlayer" role="tab"><i class="fa fa-circle-o-notch"></i></a></li>
               <li><a href="javascript:console.log('share')" role="tab" target="_blank"><i class="fa fa-share"></i></a></li>
               <li><a href="#open" role="tab"><i class="fa fa-folder-open"></i></a></li>
-              <li><a href="javascript:console.log('download')" role="tab" target="_blank"><i class="fa fa-download"></i></a></li>
+              <li><a href="javascript:console.log('download')" role="tab" target="_blank" id="download"><i class="fa fa-download"></i></a></li>
               <li><a href="#browser" role="tab" target="tab"><i class="fa fa-desktop"></i></a></li>
           </ul>
 
@@ -85,7 +85,7 @@ var layer = L.layerGroup();
 for (var k = from; k < to; k++) {
   // The add function is a callback that you call on each shape
   // you want to add to the map.
-  add(L.marker([0, k]));
+  add(L.circle([0, k], 0.8));
 }</textarea>
               <p>
                 <input type="text" id="offsetx" placeholder="x offset"/>
@@ -104,6 +104,9 @@ for (var k = from; k < to; k++) {
                   <p>Open a document via a remote URL.</p>
                   <input type="text">
                   <button>Open</button>
+                  <p>Open a document from a local file</p>
+                  <input type="file" id="file">
+                  <button id="openfile">Open</button>
               </h1>
           </div>
           <div class="sidebar-pane" id="browser">

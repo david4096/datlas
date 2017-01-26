@@ -14,6 +14,7 @@ var layers = {};
 initBasedOnURL();
 // We can start by initializing the map it won't look like much until the
 // plugins have loaded.
+$("#map").height(window.innerHeight - $("#map").offset().top);
 var map = L.map('map', {
 	crs: L.CRS.Simple,
 	zoom: mapdoc.options.zoom,
@@ -23,11 +24,11 @@ var map = L.map('map', {
 	//maxBounds: L.latLngBounds([-5000,0], [25000, Math.pow(2,58)]),
 });
 
-
-$("#map").height(window.innerHeight - $("#map").offset().top);
+var root  = L.layerGroup();
 updateMap();
+root.addTo(map);
 Object.keys(layers).forEach(function(key) {
-	layers[key].layer.addTo(map);
+	layers[key].layer.addTo(root);
 });
 
 function updateMap() {
@@ -199,6 +200,43 @@ $(document).ready(function(){
 		updateLayers();
 		updatePreviousLayers();
 	});
+
+	$("#openfile").click(function() {
+		var file = document.getElementById('file').files[0];
+		var fr = new FileReader();
+		fr.onload = receivedText;
+		fr.readAsText(file);
+	});
+// http://stackoverflow.com/questions/7346563/loading-local-json-file
+	function receivedText(e) {
+		var lines = e.target.result;
+		mapdoc = JSON.parse(lines);
+		root.clearLayers();
+		layers = {};
+		Object.keys(mapdoc.layers).forEach(function(key) {
+			var layer = mapdoc.layers[key];
+			console.log(layer);
+			layers[key] = {
+				fn: eval("(" + layer.fn + ")"),
+				offset: layer.offset,
+				shapes: layer.shapes,
+				layer: L.layerGroup()
+			}
+			layers[key].layer.addTo(root);
+		});
+		updateMap();
+		updateLayers();
+		updateStorage();
+		updatePreviousLayers();
+	}
+
+	$("#download").click(function() {
+		var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mapdoc));
+		var dlAnchorElem = document.getElementById('download');
+		dlAnchorElem.setAttribute("href",     dataStr     );
+		dlAnchorElem.setAttribute("download", "datlas.json");
+		//dlAnchorElem.click();
+	});
 });
 
 function copyCode(key) {
@@ -284,7 +322,7 @@ function previewCodeLayer(codeLayer) {
 	previewCode += "})"
 	console.log(previewCode);
 	var shapesPromise = eval(previewCode); // :)
-	previewLayer.layer.addTo(map);
+	previewLayer.layer.addTo(root);
 	previewLayer = {fn: shapesPromise, layer: previewLayer.layer, shapes: [], offset: {x: codeLayer.offsetx, y: codeLayer.offsety}};
 	// layers.push(layer);
 	updateLayer(previewLayer);
@@ -328,7 +366,7 @@ function cachepost(url, data, callback) {
 	};
 	var key = sha256(JSON.stringify(postdoc));
 	if (sha256(JSON.stringify(postdoc)) in localStorage) {
-		localStorage.setItem(key, JSON.stringify(res));
+		callback(JSON.parse(localStorage.getItem(key)));
 	} else {
 		$.ajax(url, {
 			data : JSON.stringify(data),
