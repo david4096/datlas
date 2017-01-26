@@ -118,8 +118,8 @@ map.on('moveend', function(evt) {
 
 function loadCodeLayer() {
 	var codeLayer = {
-		offsetx: $("#offsetx").html(),
-		offsety: $("#offsety").html(),
+		offsetx: parseInt($("#offsetx").val()) || 0,
+		offsety: parseInt($("#offsety").val()) || 0,
 		code: $('#code').val()
 	}
 	previewCodeLayer(codeLayer);
@@ -151,7 +151,12 @@ var sidebar = L.control.sidebar('sidebar', {position: "right"}).addTo(map);
 // here for now. It's not layout-aware and will obscure underlayers.
 
 // every run of preview reloads everything in the layer
-var previewLayer = L.layerGroup();
+var previewLayer = {
+	layer: L.layerGroup(),
+	shapes: [],
+	fn: function() {},
+	offset: {x: 0, y: 0}
+}
 var previewCode;
 
 function bounds() {
@@ -172,12 +177,15 @@ function updateLayer(layer) {
 			window.requestAnimationFrame(function() {
 				// Check a cache of shapes before adding it.
 				// I don't think we'll serialize this...
-
+				if ('setLatLngs' in shape) {
+					shape.setLatLngs(shape.getLatLngs().map(function(loc) {
+						return [loc.lat + layer.offset.y, loc.lng + layer.offset.x];
+					}));
+				} else if ('setLatLng' in shape) {
+					shape.setLatLng([shape.getLatLng().lat + layer.offset.y, shape.getLatLng().lng + layer.offset.x])
+				}
 				// Markers get special treatment
 				var shapeJSON = shape.toGeoJSON();
-				if (shapeJSON.geometry.type == "Point") {
-
-				}
 				if (layer.shapes.indexOf(sha256(JSON.stringify(shapeJSON))) == -1) {
 					shape.addTo(layer.layer);
 					layer.shapes.push(sha256(JSON.stringify(shapeJSON)));
@@ -188,22 +196,22 @@ function updateLayer(layer) {
 }
 
 var layers = [];
-
 function previewCodeLayer(codeLayer) {
-	previewLayer.clearLayers();
-	previewLayer = L.layerGroup();
+	previewLayer.layer.clearLayers();
+	previewLayer.layer = L.layerGroup();
 	previewCode = codeLayer.code
 	var shapesPromise = eval(codeLayer.code); // :)
-	previewLayer.addTo(map);
-	var layer = {fn: shapesPromise, layer: previewLayer, shapes: []};
-	layers.push(layer);
-	updateLayer(layer);
+	previewLayer.layer.addTo(map);
+	previewLayer = {fn: shapesPromise, layer: previewLayer.layer, shapes: [], offset: {x: codeLayer.offsetx, y: codeLayer.offsety}};
+	// layers.push(layer);
+	updateLayer(previewLayer);
 }
 
 function updateLayers() {
 	layers.forEach(function(layer) {
 		updateLayer(layer, bounds);
 	})
+	updateLayer(previewLayer);
 }
 
 /*
