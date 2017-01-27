@@ -556,6 +556,90 @@ var d3Overlay = L.d3SvgOverlay(function(selection, projection){
 */
 // https://github.com/teralytics/Leaflet.D3SvgOverlay
 
+var tsnejs = require('./lib/tsne.js');
+var D3SvgOverlayPlugin = require('./lib/L.D3SvgOverlay.js');
+var d3Overlay = L.d3SvgOverlay(function(selection, projection) {
+
+	var opt = {epsilon: 10, perplexity: 30};
+	var T = new tsnejs.tSNE(opt); // create a tSNE instance
+
+	var Y;
+
+	var data;
+	var scale = 20;
+	console.log(projection)
+	function updateEmbedding() {
+	  var Y = T.getSolution();
+	  svg.selectAll('.u')
+	    .data(data.users)
+			.attr("transform", function(d, i) {
+				return "translate(" + projection.latLngToLayerPoint([0, (Y[i][0]*ss*scale + tx)]).x + "," +
+	                            projection.latLngToLayerPoint([(Y[i][1]*ss*scale + ty), 0]).y + ")"; });
+
+	    // .attr("transform", function(d, i) {
+			// 	return "translate(" +
+	    //                                       (width / 2 + (Y[i][0]*ss*scale + tx)) + "," +
+	    //                                       (height / 2 + (Y[i][1]*ss*scale + ty)) + ")"; });
+	}
+
+	var svg;
+	function drawEmbedding() {
+
+	    // get min and max in each column of Y
+	    var Y = T.Y;
+
+	    svg = selection.append("g") // svg is global
+
+	    var g = svg.selectAll(".b")
+	      .data(data.users)
+	      .enter().append("g")
+	      .attr("class", "u");
+
+	    g.append("svg:image")
+	      .attr('x', 0)
+	      .attr('y', 2)
+	      .attr('width', 24)
+	      .attr('height', 24)
+	      .attr("xlink:href", function(d) { return "http://cs.stanford.edu/people/karpathy/tsnejs/scrape/imgs/" + d.substring(1); })
+
+	    g.append("text")
+	      .attr("text-anchor", "top")
+	      .attr("font-size", 12)
+	      .attr("fill", "#333")
+	      .text(function(d) { return d; });
+
+	}
+
+	var tx=0, ty=0;
+	var ss=1;
+
+	function step() {
+	  for(var k=0;k<1;k++) {
+	    T.step(); // do a few steps
+	  }
+	  updateEmbedding();
+	}
+
+	$(window).on('load', function() {
+
+	  $.getJSON( "data/out2.json", function( j ) {
+	    data = j;
+	    T.initDataDist(data.mat); // init embedding
+	    drawEmbedding(); // draw initial embedding
+
+	    //T.debugGrad();
+	    setInterval(step, 0);
+	    //step();
+
+	  });
+	});
+
+
+});
+d3Overlay.addTo(root);
+
+
+
 // Marker transitions? This thing kinda sucks but I like the idea for
 // when you are loading a code layer
 // We can do this just using plain old CSS transitions I think
